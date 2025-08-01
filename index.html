@@ -139,7 +139,11 @@
              * @returns {object} The selector instance.
              */
             function createSelector(type) {
-                const options = [...initialData[type]];
+                const storageKey = `random-selector-options-${type}`;
+                const savedOptions = localStorage.getItem(storageKey);
+                // Load from local storage or use initial data if nothing is saved
+                const options = savedOptions ? JSON.parse(savedOptions) : [...initialData[type]];
+
                 const spinButton = document.getElementById(`spin-button-${type}`);
                 const resultText = document.getElementById(`result-text-${type}`);
                 const newOptionInput = document.getElementById(`new-option-input-${type}`);
@@ -159,6 +163,8 @@
                     const newOption = newOptionInput.value.trim();
                     if (newOption && !options.includes(newOption)) {
                         options.push(newOption);
+                        // Save the updated list to local storage
+                        localStorage.setItem(storageKey, JSON.stringify(options));
                         renderOptionList();
                         newOptionInput.value = '';
                     } else {
