@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>今天吃什麼？美食隨機選擇器</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Noto Sans TC -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <!-- Confetti JS Library -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+        }
+        .result-pop {
+            animation: pop 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+        }
+        @keyframes pop {
+            0% { transform: scale(0.5); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        /* Tab styling */
+        .tab-button {
+            transition: all 0.3s ease;
+        }
+        .tab-active {
+            border-bottom-width: 3px;
+            border-color: #f59e0b; /* amber-500 */
+            color: #f59e0b;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 dark:bg-gray-900 flex flex-col items-center justify-center min-h-screen p-4 transition-colors duration-500">
+
+    <div class="w-full max-w-2xl text-center">
+        <!-- Header -->
+        <header class="mb-4">
+            <h1 id="main-header" class="text-4xl md:text-5xl font-bold text-amber-500">今天吃什麼？</h1>
+        </header>
+
+        <!-- Tab Navigation -->
+        <div class="w-full max-w-2xl mb-4">
+            <div class="flex border-b border-gray-300 dark:border-gray-600">
+                <button id="tab-restaurant" class="tab-button flex-1 py-3 font-bold text-lg tab-active">餐廳</button>
+                <button id="tab-tea" class="tab-button flex-1 py-3 font-bold text-lg text-gray-500 dark:text-gray-400">飲料</button>
+            </div>
+        </div>
+
+        <!-- Tab Panels -->
+        <div id="tab-panels">
+            <!-- Restaurant Panel -->
+            <div id="panel-restaurant">
+                <main class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-8 md:p-12 w-full">
+                    <div id="result-display-restaurant" class="h-32 flex items-center justify-center mb-8">
+                        <span id="result-text-restaurant" class="text-3xl md:text-5xl font-bold text-gray-700 dark:text-gray-200 transition-all duration-100">按下按鈕開始！</span>
+                    </div>
+                    <button id="spin-button-restaurant" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold text-xl py-4 px-8 rounded-xl shadow-lg transition-transform transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-amber-300 disabled:bg-gray-400 disabled:cursor-not-allowed disabled:transform-none">
+                        開始選擇！
+                    </button>
+                </main>
+                <div class="mt-8 w-full">
+                    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
+                        <h3 class="text-xl font-bold text-gray-800 dark:text-gray-200 mb-4">新增你的口袋名單</h3>
+                        <div class="flex flex-col sm:flex-row gap-3">
+                            <input type="text" id="new-option-input-restaurant" placeholder="輸入餐廳名稱..." class="flex-grow bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg border-2 border-gray-300 dark:border-gray-600 focus:border-amber-500 focus:ring-0 px-4 py-2">
+                            <button id="add-option-button-restaurant" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-6 rounded-lg transition-colors">新增選項</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tea Shop Panel -->
+            <div id="panel-tea" class="hidden">
+                <main class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-8 md:p-12 w-full">
+                    <div id="result-display-tea" class="h-32 flex items-center justify-center mb-8">
+                        <span id="result-text-tea" class="text-3xl md:text-5xl font-bold text-gray-700 dark:text-gray-200 transition-all duration-100">按下按鈕開始！</span>
+                    </div>
+                    <button id="spin-button-tea" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold text-xl py-4 px-8 rounded-xl shadow-lg transition-transform transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-amber-300 disabled:bg-gray-400 disabled:cursor-not-allowed disabled:transform-none">
+                        開始選擇！
+                    </button>
+                </main>
+                <div class="mt-8 w-full">
+                    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
+                        <h3 class="text-xl font-bold text-gray-800 dark:text-gray-200 mb-4">新增你的口袋名單</h3>
+                        <div class="flex flex-col sm:flex-row gap-3">
+                            <input type="text" id="new-option-input-tea" placeholder="輸入飲料店名稱..." class="flex-grow bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg border-2 border-gray-300 dark:border-gray-600 focus:border-amber-500 focus:ring-0 px-4 py-2">
+                            <button id="add-option-button-tea" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-6 rounded-lg transition-colors">新增選項</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer with option list -->
+        <footer class="mt-8">
+            <p id="list-header" class="text-gray-500 dark:text-gray-400">目前的餐廳選項：</p>
+            <div id="option-list" class="flex flex-wrap justify-center gap-x-3 gap-y-2 text-sm text-gray-600 dark:text-gray-300 mt-2">
+                <!-- Option names will be injected here by JS -->
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- Data ---
+            const initialData = {
+                restaurant: [
+                    '赤鬼炙燒牛排', '輕井澤', 'IKEA', '愛娃媽咪', '小島3.5', '海底撈',
+                    '櫻糀炸豬排', '燦川', '壽司郎', '平禄寿司', '丸龜製麵', '第二市場',
+                    '八方雲集', '麥當勞', '康寶藥燉排骨', '永清', '大埔鐵板燒', '亞丁尼',
+                    '惹鍋', '添好運', '點點心', '初月砂鍋粥'
+                ],
+                tea: [
+                    '可不可熟成紅茶', '五桐號', '麻古茶坊', '萬波', '迷客夏', '龜記',
+                    '喫茶小舖', '一沐日', '烏弄', '八曜和茶', '得正', '老賴茶棧'
+                ]
+            };
+
+            // --- Global Elements ---
+            const mainHeader = document.getElementById('main-header');
+            const listHeader = document.getElementById('list-header');
+            const optionListContainer = document.getElementById('option-list');
+
+            // --- Tab Elements ---
+            const tabRestaurant = document.getElementById('tab-restaurant');
+            const tabTea = document.getElementById('tab-tea');
+            const panelRestaurant = document.getElementById('panel-restaurant');
+            const panelTea = document.getElementById('panel-tea');
+
+            let activeSelector;
+
+            /**
+             * Creates a selector instance with its own data and elements.
+             * @param {string} type - 'restaurant' or 'tea'
+             * @returns {object} The selector instance.
+             */
+            function createSelector(type) {
+                const options = [...initialData[type]];
+                const spinButton = document.getElementById(`spin-button-${type}`);
+                const resultText = document.getElementById(`result-text-${type}`);
+                const newOptionInput = document.getElementById(`new-option-input-${type}`);
+                const addOptionButton = document.getElementById(`add-option-button-${type}`);
+
+                const renderOptionList = () => {
+                    optionListContainer.innerHTML = '';
+                    options.forEach(name => {
+                        const span = document.createElement('span');
+                        span.textContent = name;
+                        span.className = 'bg-gray-200 dark:bg-gray-700 px-2 py-1 rounded-md';
+                        optionListContainer.appendChild(span);
+                    });
+                };
+
+                const addOption = () => {
+                    const newOption = newOptionInput.value.trim();
+                    if (newOption && !options.includes(newOption)) {
+                        options.push(newOption);
+                        renderOptionList();
+                        newOptionInput.value = '';
+                    } else {
+                        newOptionInput.value = '';
+                    }
+                };
+
+                const startSpin = () => {
+                    if (options.length === 0) {
+                        resultText.textContent = '請先新增選項！';
+                        return;
+                    }
+                    spinButton.disabled = true;
+                    spinButton.textContent = '選擇中...';
+                    resultText.classList.remove('result-pop', 'text-green-500', 'dark:text-green-400');
+
+                    const spinInterval = setInterval(() => {
+                        resultText.textContent = options[Math.floor(Math.random() * options.length)];
+                    }, 100);
+
+                    setTimeout(() => {
+                        clearInterval(spinInterval);
+                        finalizeSelection();
+                    }, 3000);
+                };
+
+                const finalizeSelection = () => {
+                    const finalChoice = options[Math.floor(Math.random() * options.length)];
+                    resultText.textContent = `就是你了：${finalChoice}！`;
+                    resultText.classList.add('result-pop', 'text-green-500', 'dark:text-green-400');
+                    triggerConfetti();
+                    spinButton.disabled = false;
+                    spinButton.textContent = '再選一次！';
+                };
+
+                // Add event listeners for this instance
+                spinButton.addEventListener('click', startSpin);
+                addOptionButton.addEventListener('click', addOption);
+                newOptionInput.addEventListener('keypress', e => e.key === 'Enter' && addOption());
+
+                return { renderOptionList };
+            }
+
+            // --- Initialize Selectors ---
+            const restaurantSelector = createSelector('restaurant');
+            const teaSelector = createSelector('tea');
+
+            // --- Tab Switching Logic ---
+            function switchTab(type) {
+                if (type === 'restaurant') {
+                    activeSelector = restaurantSelector;
+                    panelRestaurant.classList.remove('hidden');
+                    panelTea.classList.add('hidden');
+                    tabRestaurant.classList.add('tab-active', 'text-amber-500');
+                    tabRestaurant.classList.remove('text-gray-500', 'dark:text-gray-400');
+                    tabTea.classList.remove('tab-active', 'text-amber-500');
+                    tabTea.classList.add('text-gray-500', 'dark:text-gray-400');
+                    mainHeader.textContent = '今天吃什麼？';
+                    listHeader.textContent = '目前的餐廳選項：';
+                } else { // tea
+                    activeSelector = teaSelector;
+                    panelTea.classList.remove('hidden');
+                    panelRestaurant.classList.add('hidden');
+                    tabTea.classList.add('tab-active', 'text-amber-500');
+                    tabTea.classList.remove('text-gray-500', 'dark:text-gray-400');
+                    tabRestaurant.classList.remove('tab-active', 'text-amber-500');
+                    tabRestaurant.classList.add('text-gray-500', 'dark:text-gray-400');
+                    mainHeader.textContent = '今天喝什麼？';
+                    listHeader.textContent = '目前的飲料店選項：';
+                }
+                activeSelector.renderOptionList();
+            }
+
+            tabRestaurant.addEventListener('click', () => switchTab('restaurant'));
+            tabTea.addEventListener('click', () => switchTab('tea'));
+
+            // --- Initial State ---
+            switchTab('restaurant'); // Start on the restaurant tab
+
+            // --- Global Confetti Function ---
+            function triggerConfetti() {
+                const duration = 3 * 1000;
+                const animationEnd = Date.now() + duration;
+                const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 100 };
+
+                const interval = setInterval(() => {
+                    const timeLeft = animationEnd - Date.now();
+                    if (timeLeft <= 0) return clearInterval(interval);
+                    const particleCount = 50 * (timeLeft / duration);
+                    confetti({ ...defaults, particleCount, origin: { x: Math.random() * 0.4 + 0.1, y: Math.random() - 0.2 } });
+                    confetti({ ...defaults, particleCount, origin: { x: Math.random() * 0.4 + 0.5, y: Math.random() - 0.2 } });
+                }, 250);
+            }
+        });
+    </script>
+
+</body>
+</html>
