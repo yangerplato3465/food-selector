@@ -32,6 +32,17 @@
             border-color: #f59e0b; /* amber-500 */
             color: #f59e0b;
         }
+        /* Style for clickable list items */
+        .option-item {
+            transition: background-color 0.2s ease, transform 0.2s ease;
+        }
+        .option-item:hover {
+            background-color: #fecaca; /* red-200 */
+            transform: translateY(-2px);
+        }
+        .dark .option-item:hover {
+             background-color: #7f1d1d; /* red-900 */
+        }
     </style>
 </head>
 <body class="bg-gray-100 dark:bg-gray-900 flex flex-col items-center justify-center min-h-screen p-4 transition-colors duration-500">
@@ -104,6 +115,18 @@
         </footer>
     </div>
 
+    <!-- Deletion Confirmation Modal -->
+    <div id="delete-modal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-sm text-center">
+            <h3 class="text-xl font-bold mb-4 text-gray-900 dark:text-gray-100">確認刪除</h3>
+            <p id="modal-text" class="mb-6 text-gray-600 dark:text-gray-300">您確定要刪除這個選項嗎？</p>
+            <div class="flex justify-end gap-4">
+                <button id="modal-cancel-button" class="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-800 dark:text-gray-200 rounded-lg hover:bg-gray-400 dark:hover:bg-gray-500 transition-colors">取消</button>
+                <button id="modal-confirm-button" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">刪除</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             // --- Data ---
@@ -124,6 +147,10 @@
             const mainHeader = document.getElementById('main-header');
             const listHeader = document.getElementById('list-header');
             const optionListContainer = document.getElementById('option-list');
+            const deleteModal = document.getElementById('delete-modal');
+            const modalText = document.getElementById('modal-text');
+            const modalCancelButton = document.getElementById('modal-cancel-button');
+            const modalConfirmButton = document.getElementById('modal-confirm-button');
 
             // --- Tab Elements ---
             const tabRestaurant = document.getElementById('tab-restaurant');
@@ -141,7 +168,6 @@
             function createSelector(type) {
                 const storageKey = `random-selector-options-${type}`;
                 const savedOptions = localStorage.getItem(storageKey);
-                // Load from local storage or use initial data if nothing is saved
                 const options = savedOptions ? JSON.parse(savedOptions) : [...initialData[type]];
 
                 const spinButton = document.getElementById(`spin-button-${type}`);
@@ -149,12 +175,16 @@
                 const newOptionInput = document.getElementById(`new-option-input-${type}`);
                 const addOptionButton = document.getElementById(`add-option-button-${type}`);
 
+                let optionNameToDelete = null;
+                let lastChoice = null; // Variable to store the last selected option
+
                 const renderOptionList = () => {
                     optionListContainer.innerHTML = '';
                     options.forEach(name => {
                         const span = document.createElement('span');
                         span.textContent = name;
-                        span.className = 'bg-gray-200 dark:bg-gray-700 px-2 py-1 rounded-md';
+                        span.className = 'option-item bg-gray-200 dark:bg-gray-700 px-2 py-1 rounded-md cursor-pointer';
+                        span.addEventListener('click', () => promptForDeletion(name));
                         optionListContainer.appendChild(span);
                     });
                 };
@@ -163,13 +193,30 @@
                     const newOption = newOptionInput.value.trim();
                     if (newOption && !options.includes(newOption)) {
                         options.push(newOption);
-                        // Save the updated list to local storage
                         localStorage.setItem(storageKey, JSON.stringify(options));
                         renderOptionList();
                         newOptionInput.value = '';
                     } else {
                         newOptionInput.value = '';
                     }
+                };
+
+                const promptForDeletion = (name) => {
+                    optionNameToDelete = name;
+                    modalText.innerHTML = `您確定要刪除「<strong class="text-amber-500">${name}</strong>」嗎？`;
+                    deleteModal.classList.remove('hidden');
+                };
+
+                const handleConfirmDelete = () => {
+                    if (!optionNameToDelete) return;
+                    const index = options.indexOf(optionNameToDelete);
+                    if (index > -1) {
+                        options.splice(index, 1);
+                        localStorage.setItem(storageKey, JSON.stringify(options));
+                        renderOptionList();
+                        hideModal();
+                    }
+                    optionNameToDelete = null;
                 };
 
                 const startSpin = () => {
@@ -192,7 +239,29 @@
                 };
 
                 const finalizeSelection = () => {
-                    const finalChoice = options[Math.floor(Math.random() * options.length)];
+                    // Handle case with 1 or 0 options to prevent infinite loop
+                    if (options.length < 2) {
+                        const finalChoice = options.length > 0 ? options[0] : '沒有選項';
+                        if (options.length > 0) {
+                           resultText.textContent = `就是你了：${finalChoice}！`;
+                           resultText.classList.add('result-pop', 'text-green-500', 'dark:text-green-400');
+                           triggerConfetti();
+                        } else {
+                           resultText.textContent = finalChoice;
+                        }
+                        spinButton.disabled = false;
+                        spinButton.textContent = '再選一次！';
+                        return;
+                    }
+
+                    let finalChoice;
+                    // Keep picking a new option until it's different from the last one
+                    do {
+                        finalChoice = options[Math.floor(Math.random() * options.length)];
+                    } while (finalChoice === lastChoice);
+
+                    lastChoice = finalChoice; // Update the last choice
+
                     resultText.textContent = `就是你了：${finalChoice}！`;
                     resultText.classList.add('result-pop', 'text-green-500', 'dark:text-green-400');
                     triggerConfetti();
@@ -205,7 +274,7 @@
                 addOptionButton.addEventListener('click', addOption);
                 newOptionInput.addEventListener('keypress', e => e.key === 'Enter' && addOption());
 
-                return { renderOptionList };
+                return { renderOptionList, handleConfirmDelete };
             }
 
             // --- Initialize Selectors ---
@@ -223,7 +292,7 @@
                     tabTea.classList.remove('tab-active', 'text-amber-500');
                     tabTea.classList.add('text-gray-500', 'dark:text-gray-400');
                     mainHeader.textContent = '今天吃什麼？';
-                    listHeader.textContent = '目前的餐廳選項：';
+                    listHeader.textContent = '目前的餐廳選項：(點擊可刪除)';
                 } else { // tea
                     activeSelector = teaSelector;
                     panelTea.classList.remove('hidden');
@@ -233,15 +302,31 @@
                     tabRestaurant.classList.remove('tab-active', 'text-amber-500');
                     tabRestaurant.classList.add('text-gray-500', 'dark:text-gray-400');
                     mainHeader.textContent = '今天喝什麼？';
-                    listHeader.textContent = '目前的飲料店選項：';
+                    listHeader.textContent = '目前的飲料店選項：(點擊可刪除)';
                 }
                 activeSelector.renderOptionList();
             }
 
-            tabRestaurant.addEventListener('click', () => switchTab('restaurant'));
-            tabTea.addEventListener('click', () => switchTab('tea'));
+            // --- Global Modal Logic ---
+            function hideModal() {
+                deleteModal.classList.add('hidden');
+            }
+
+            modalConfirmButton.addEventListener('click', () => {
+                if (activeSelector) {
+                    activeSelector.handleConfirmDelete();
+                }
+            });
+            modalCancelButton.addEventListener('click', hideModal);
+            deleteModal.addEventListener('click', (event) => {
+                if (event.target === deleteModal) {
+                    hideModal();
+                }
+            });
 
             // --- Initial State ---
+            tabRestaurant.addEventListener('click', () => switchTab('restaurant'));
+            tabTea.addEventListener('click', () => switchTab('tea'));
             switchTab('restaurant'); // Start on the restaurant tab
 
             // --- Global Confetti Function ---
